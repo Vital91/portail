@@ -1,22 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Poteaux -->
-  <rect x="4" y="8" width="4" height="48" fill="#333"/>
-  <rect x="56" y="8" width="4" height="48" fill="#333"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D4FF"/>
+      <stop offset="100%" stop-color="#0066FF"/>
+    </linearGradient>
+  </defs>
 
-  <!-- Rail -->
-  <rect x="6" y="50" width="52" height="3" fill="#666"/>
+  <!-- Fond -->
+  <rect width="512" height="512" rx="120" fill="#0F172A"/>
 
-  <!-- Portail coulissant -->
-  <rect x="12" y="18" width="34" height="24" rx="2" fill="#2196F3" stroke="#0D47A1" stroke-width="2"/>
+  <!-- Poteau gauche -->
+  <rect x="90" y="120" width="20" height="270" rx="10" fill="#FFFFFF"/>
+
+  <!-- Portail -->
+  <rect x="130" y="150" width="210" height="180"
+        rx="20"
+        fill="url(#g)"
+        stroke="#4FC3FF"
+        stroke-width="8"/>
 
   <!-- Barreaux -->
-  <line x1="18" y1="18" x2="18" y2="42" stroke="#FFFFFF" stroke-width="2"/>
-  <line x1="24" y1="18" x2="24" y2="42" stroke="#FFFFFF" stroke-width="2"/>
-  <line x1="30" y1="18" x2="30" y2="42" stroke="#FFFFFF" stroke-width="2"/>
-  <line x1="36" y1="18" x2="36" y2="42" stroke="#FFFFFF" stroke-width="2"/>
-  <line x1="42" y1="18" x2="42" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+  <g stroke="white" stroke-width="8" opacity="0.9">
+    <line x1="170" y1="170" x2="170" y2="310"/>
+    <line x1="210" y1="170" x2="210" y2="310"/>
+    <line x1="250" y1="170" x2="250" y2="310"/>
+    <line x1="290" y1="170" x2="290" y2="310"/>
+  </g>
 
-  <!-- Flèche de coulissement -->
-  <path d="M48 30 L56 24 L56 28 L62 28 L62 32 L56 32 L56 36 Z"
-        fill="#4CAF50"/>
+  <!-- Mouvement coulissant -->
+  <path d="M370 240 H450"
+        stroke="#00FF88"
+        stroke-width="20"
+        stroke-linecap="round"/>
+
+  <path d="M420 205 L460 240 L420 275"
+        fill="none"
+        stroke="#00FF88"
+        stroke-width="20"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
 </svg>

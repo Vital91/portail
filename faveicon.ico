@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Poteaux -->
+  <rect x="4" y="8" width="4" height="48" fill="#333"/>
+  <rect x="56" y="8" width="4" height="48" fill="#333"/>
+
+  <!-- Rail -->
+  <rect x="6" y="50" width="52" height="3" fill="#666"/>
+
+  <!-- Portail coulissant -->
+  <rect x="12" y="18" width="34" height="24" rx="2" fill="#2196F3" stroke="#0D47A1" stroke-width="2"/>
+
+  <!-- Barreaux -->
+  <line x1="18" y1="18" x2="18" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="24" y1="18" x2="24" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="30" y1="18" x2="30" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="36" y1="18" x2="36" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="42" y1="18" x2="42" y2="42" stroke="#FFFFFF" stroke-width="2"/>
+
+  <!-- Flèche de coulissement -->
+  <path d="M48 30 L56 24 L56 28 L62 28 L62 32 L56 32 L56 36 Z"
+        fill="#4CAF50"/>
+</svg>

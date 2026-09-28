@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#e8f4ed">
   <title>Portail Vital | Télécommande</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -67,17 +68,19 @@
     }
 
     .brand-mark {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 42px;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
       display: grid;
       place-items: center;
       border-radius: 10px;
-      color: white;
       background: var(--green);
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 19px;
-      font-weight: 700;
+    }
+
+    .brand-mark img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
     }
 
     .brand-name {
@@ -257,7 +260,9 @@
   <main class="remote">
     <header class="topline">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true">V</span>
+        <span class="brand-mark" aria-hidden="true">
+          <img src="favicon.ico" alt="">
+        </span>
         <span class="brand-name">Portail de Vital</span>
       </div>
       <span class="device-tag">ESP32 · BLE</span>

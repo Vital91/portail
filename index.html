@@ -307,7 +307,7 @@
             <input id="pin" type="password" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="one-time-code" required>
             <button class="pin-visibility" id="toggle-pin-visibility" type="button" aria-controls="pin" aria-pressed="false">Afficher</button>
           </div>
-          <p class="command-row">Dernier code mémorisé dans ce navigateur pendant 30 jours.</p>
+          <p class="command-row" id="pin-storage-hint">Dernier code mémorisé dans ce navigateur pendant 30 jours.</p>
         </div>
         <button class="action-button action-primary" id="send" type="button">
           <span class="button-icon" aria-hidden="true">↑</span>
@@ -340,28 +340,76 @@ const statusPanel = document.getElementById("status-panel");
 const commandValue = document.getElementById("command-value");
 const pinInput = document.getElementById("pin");
 const pinVisibilityButton = document.getElementById("toggle-pin-visibility");
+const pinStorageHint = document.getElementById("pin-storage-hint");
 const PIN_COOKIE_NAME = "portal_last_pin";
+const PIN_STORAGE_NAME = "portal_last_pin";
 const PIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
 function readCookie(name) {
+try {
   const cookie = document.cookie.split("; ").find(entry => entry.startsWith(`${name}=`));
   return cookie ? cookie.slice(name.length + 1) : "";
+} catch (error) {
+  return "";
+}
 }
 
-function savePinCookie(pin) {
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+function getSavedPin() {
+const cookiePin = readCookie(PIN_COOKIE_NAME);
+if (/^[0-9]{1,6}$/.test(cookiePin)) {
+  return cookiePin;
+}
+
+try {
+  const saved = localStorage.getItem(PIN_STORAGE_NAME);
+  if (!saved) {
+    return "";
+  }
+
+  const [savedAt, pin] = saved.split(":");
+  const ageSeconds = (Date.now() - Number(savedAt)) / 1000;
+  return /^[0-9]{1,6}$/.test(pin) &&
+    Number.isFinite(ageSeconds) &&
+    ageSeconds >= 0 &&
+    ageSeconds <= PIN_COOKIE_MAX_AGE
+    ? pin
+    : "";
+} catch (error) {
+  return "";
+}
+}
+
+function savePin(pin) {
+const secure = window.location.protocol === "https:" ? "; Secure" : "";
+try {
   document.cookie = `${PIN_COOKIE_NAME}=${pin}; Max-Age=${PIN_COOKIE_MAX_AGE}; Path=/; SameSite=Strict${secure}`;
+  if (readCookie(PIN_COOKIE_NAME) === pin) {
+    return true;
+  }
+} catch (error) {
+  // Fall back to local storage when cookies are unavailable, such as on file:// pages.
 }
 
-const savedPin = readCookie(PIN_COOKIE_NAME);
+try {
+  const savedValue = `${Date.now()}:${pin}`;
+  localStorage.setItem(PIN_STORAGE_NAME, savedValue);
+  return localStorage.getItem(PIN_STORAGE_NAME) === savedValue;
+} catch (error) {
+  return false;
+}
+}
+
+const savedPin = getSavedPin();
 if (/^[0-9]{1,6}$/.test(savedPin)) {
-  pinInput.value = savedPin;
+pinInput.value = savedPin;
 }
 
 pinInput.addEventListener("input", () => {
-  if (/^[0-9]{1,6}$/.test(pinInput.value)) {
-    savePinCookie(pinInput.value);
-  }
+if (/^[0-9]{1,6}$/.test(pinInput.value)) {
+  pinStorageHint.textContent = savePin(pinInput.value)
+    ? "Dernier code mémorisé dans ce navigateur pendant 30 jours."
+    : "Impossible de mémoriser le code dans ce navigateur.";
+}
 });
 
 pinVisibilityButton.addEventListener("click", () => {
@@ -469,7 +517,9 @@ document.getElementById("send").onclick = async () => {
       pinInput.focus();
       return;
     }
-    savePinCookie(pin);
+    if (!savePin(pin)) {
+      pinStorageHint.textContent = "Impossible de mémoriser le code dans ce navigateur.";
+    }
 
     if (!characteristicTX) {
       const selectedDevice = await navigator.bluetooth.requestDevice({

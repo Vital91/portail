@@ -12,7 +12,7 @@
   <style>
     :root {
       color-scheme: light;
-      --ink: #19332c;
+      --ink: #000000;
       --muted: #71827b;
       --paper: #f4f8f4;
       --surface: #ffffff;
@@ -40,7 +40,7 @@
       font-family: "DM Sans", sans-serif;
     }
 
-    button { font: inherit; }
+    button, input { font: inherit; }
 
     .remote {
       width: min(100%, 420px);
@@ -74,7 +74,7 @@
       display: grid;
       place-items: center;
       border-radius: 10px;
-      background: var(--green);
+      background: var(--ink);
     }
 
     .brand-mark img {
@@ -170,6 +170,27 @@
       gap: 10px;
     }
 
+    .pin-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .pin-entry input { min-width: 0; }
+
+    .pin-visibility {
+      min-width: 76px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--green-dark);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .pin-visibility:focus-visible { outline: 3px solid #f4b19e; outline-offset: 2px; }
+
     .action-button {
       width: 100%;
       min-height: 54px;
@@ -190,6 +211,20 @@
     .action-button:active { transform: scale(.985); }
     .action-button:focus-visible { outline: 3px solid #f4b19e; outline-offset: 3px; }
 
+    input {
+      width: 100%;
+      min-height: 50px;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: white;
+      font-size: 18px;
+      letter-spacing: .18em;
+    }
+
+    input:focus-visible { outline: 3px solid #f4b19e; outline-offset: 2px; }
+
     .action-primary {
       min-height: 64px;
       color: white;
@@ -198,14 +233,6 @@
     }
 
     .action-primary:hover { background: var(--orange-dark); }
-
-    .action-secondary {
-      color: var(--green-dark);
-      border-color: var(--line);
-      background: white;
-    }
-
-    .action-secondary:hover { border-color: #a9cbb5; background: #f5faf6; }
 
     .button-icon {
       width: 24px;
@@ -271,19 +298,23 @@
     <section aria-labelledby="page-title">
       <p class="eyebrow">Télécommande</p>
       <h1 id="page-title">Votre portail,<br>à portée de Téléphone</h1>
-      <p class="subtitle">Commande sans fil sécurisée</p>
+      <p class="subtitle">Saisissez votre code personnel pour demander l’ouverture du portail.</p>
 
+      <div class="actions">
+        <div>
+          <label for="pin">Code secret</label>
+          <div class="pin-entry">
+            <input id="pin" type="password" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="one-time-code" required>
+            <button class="pin-visibility" id="toggle-pin-visibility" type="button" aria-controls="pin" aria-pressed="false">Afficher</button>
+          </div>
+          <p class="command-row">Dernier code mémorisé dans ce navigateur pendant 30 jours.</p>
+        </div>
         <button class="action-button action-primary" id="send" type="button">
           <span class="button-icon" aria-hidden="true">↑</span>
-          Ouvrir/Fermer Le portail
+          Ouvrir le portail
         </button>
       </div>
-      <div class="actions">
-        <button class="action-button action-secondary" id="connect" type="button">
-          <span class="button-icon" aria-hidden="true">↔</span>
-          Connecter l’ESP32
-        </button>
-   
+
       <div class="status-panel" id="status-panel" data-state="waiting" role="status" aria-live="polite">
         <span class="status-light" aria-hidden="true"></span>
         <p id="status">Connexion BLE en attente...</p>
@@ -292,8 +323,8 @@
 
       <div class="divider" aria-hidden="true"></div>
       <div class="command-row">
-        <span>Dernière commande</span>
-        <span class="command-value">Hello ESP32 !</span>
+        <span>Dernière demande</span>
+        <span class="command-value" id="command-value"></span>
       </div>
     </section>
   </main>
@@ -306,15 +337,65 @@ const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const CHARACTERISTIC_TX_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 const statusElement = document.getElementById("status");
 const statusPanel = document.getElementById("status-panel");
+const commandValue = document.getElementById("command-value");
+const pinInput = document.getElementById("pin");
+const pinVisibilityButton = document.getElementById("toggle-pin-visibility");
+const PIN_COOKIE_NAME = "portal_last_pin";
+const PIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
+
+function readCookie(name) {
+  const cookie = document.cookie.split("; ").find(entry => entry.startsWith(`${name}=`));
+  return cookie ? cookie.slice(name.length + 1) : "";
+}
+
+function savePinCookie(pin) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${PIN_COOKIE_NAME}=${pin}; Max-Age=${PIN_COOKIE_MAX_AGE}; Path=/; SameSite=Strict${secure}`;
+}
+
+const savedPin = readCookie(PIN_COOKIE_NAME);
+if (/^[0-9]{1,6}$/.test(savedPin)) {
+  pinInput.value = savedPin;
+}
+
+pinInput.addEventListener("input", () => {
+  if (/^[0-9]{1,6}$/.test(pinInput.value)) {
+    savePinCookie(pinInput.value);
+  }
+});
+
+pinVisibilityButton.addEventListener("click", () => {
+  const revealPin = pinInput.type === "password";
+  pinInput.type = revealPin ? "text" : "password";
+  pinVisibilityButton.textContent = revealPin ? "Masquer" : "Afficher";
+  pinVisibilityButton.setAttribute("aria-pressed", String(revealPin));
+});
 
 function setStatus(message) {
   statusElement.textContent = message;
   const normalizedMessage = message.toLowerCase();
-  statusPanel.dataset.state = normalizedMessage.includes("connecté") || normalizedMessage.includes("envoyé")
+  statusPanel.dataset.state = normalizedMessage.includes("connecté") ||
+    normalizedMessage.includes("ouverture autorisée")
     ? "connected"
-    : normalizedMessage.includes("échec")
+    : ["échec", "incorrect", "pas valide", "non synchronisée", "saisissez"].some(part =>
+        normalizedMessage.includes(part))
       ? "error"
       : "waiting";
+}
+
+function handleResponse(value) {
+  const response = new TextDecoder().decode(value).replace(/\0/g, "");
+  const messages = {
+    opening: "Code accepté. Ouverture autorisée.",
+    invalid_pin: "Code incorrect ou utilisateur inconnu.",
+    pin_expired: "Ce code n’est pas valide à la date actuelle.",
+    time_not_synced: "Heure du portail non synchronisée. Contactez l’administrateur."
+  };
+  const message = messages[response];
+  if (message) {
+    setStatus(message);
+    commandValue.textContent = response === "opening" ? "Acceptée" : "Refusée";
+  }
 }
 
 async function connectToDevice(selectedDevice) {
@@ -330,6 +411,10 @@ async function connectToDevice(selectedDevice) {
     : await device.gatt.connect();
   const service = await server.getPrimaryService(SERVICE_UUID);
   characteristicTX = await service.getCharacteristic(CHARACTERISTIC_TX_UUID);
+  characteristicTX.addEventListener("characteristicvaluechanged", event => {
+    handleResponse(event.target.value);
+  });
+  await characteristicTX.startNotifications();
 
   setStatus("Connecté à l’ESP32 !");
 }
@@ -346,7 +431,7 @@ async function reconnectAutomatically() {
   }
 
   if (typeof navigator.bluetooth.getDevices !== "function") {
-    setStatus("Chrome ne permet pas de retrouver automatiquement un appareil BLE après le rechargement. Cliquez sur « Connecter ESP32 ».");
+    setStatus("Connectez le portail en appuyant sur « Ouvrir le portail ».");
     return;
   }
 
@@ -356,24 +441,12 @@ async function reconnectAutomatically() {
   );
 
   if (!knownDevice) {
-    setStatus("ESP32 non autorisé sur ce site. Cliquez sur « Connecter ESP32 » une première fois.");
+    setStatus("ESP32 non autorisé sur ce site. Appuyez sur « Ouvrir le portail » pour vous connecter.");
     return;
   }
 
   await connectToDevice(knownDevice);
 }
-
-document.getElementById("connect").onclick = async () => {
-  try {
-    const selectedDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [SERVICE_UUID] }]
-    });
-    await connectToDevice(selectedDevice);
-  } catch (e) {
-    console.error(e);
-    setStatus(`Échec de connexion : ${e.message}`);
-  }
-};
 
 function startAutomaticConnection() {
   reconnectAutomatically().catch((e) => {
@@ -390,18 +463,23 @@ if (document.readyState === "loading") {
 
 document.getElementById("send").onclick = async () => {
   try {
+    const pin = pinInput.value;
+    if (!/^[0-9]{1,6}$/.test(pin)) {
+      setStatus("Saisissez un code composé de 1 à 6 chiffres.");
+      pinInput.focus();
+      return;
+    }
+    savePinCookie(pin);
+
     if (!characteristicTX) {
       const selectedDevice = await navigator.bluetooth.requestDevice({
         filters: [{ services: [SERVICE_UUID] }]
       });
       await connectToDevice(selectedDevice);
     }
-
-    const msg = new TextEncoder().encode("Hello ESP32 !");
-    await characteristicTX.writeValue(msg);
-
-    setStatus("Message envoyé !");
-    console.log("Message envoyé !");
+    commandValue.textContent = "En attente";
+    setStatus("Code envoyé. Vérification en cours…");
+    await characteristicTX.writeValueWithResponse(new TextEncoder().encode(pin));
   } catch (e) {
     console.error(e);
     setStatus(`Échec de connexion ou d’envoi : ${e.message}`);

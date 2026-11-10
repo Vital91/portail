@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#e8f4ed">
   <title>Portail Vital | Télécommande</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -60,11 +59,10 @@
       margin-bottom: 32px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
+    .topline h1 {
       min-width: 0;
+      flex: 1 1 auto;
+      font-size: clamp(16px, 4.2vw, 22px);
     }
 
     .brand-mark {
@@ -101,6 +99,22 @@
       font-size: 10px;
       font-weight: 700;
       letter-spacing: .08em;
+    }
+
+    .remote-meta {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .remote-image {
+      display: block;
+      width: 192px;
+      height: 140px;
+      border-radius: 7px;
+      object-fit: cover;
     }
 
     .eyebrow {
@@ -274,8 +288,14 @@
     @media (max-width: 380px) {
       .remote { padding: 20px; }
       .topline { margin-bottom: 26px; }
-      h1 { font-size: 27px; }
+      .remote-image { width: 112px; height: 82px; }
+      .device-tag { padding: 6px 7px; }
+      .topline h1 { font-size: clamp(16px, 5vw, 19px); }
       .device-tag { font-size: 9px; }
+    }
+
+    @media (min-width: 381px) and (max-width: 480px) {
+      .remote-image { width: 144px; height: 104px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -286,18 +306,14 @@
 <body>
   <main class="remote">
     <header class="topline">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">
-          <img src="favicon.ico" alt="">
-        </span>
-        <span class="brand-name">Portail de Vital</span>
+      <h1 id="page-title">Télécommande <br>Portail</h1>
+      <div class="remote-meta">
+        <img class="remote-image" src="Telecommande.jpg" alt="Illustration de la télécommande du portail">
+        <span class="device-tag">ESP32 · BLE</span>
       </div>
-      <span class="device-tag">ESP32 · BLE</span>
     </header>
 
     <section aria-labelledby="page-title">
-      <p class="eyebrow">Télécommande</p>
-      <h1 id="page-title">Votre portail,<br>à portée de Téléphone</h1>
       <p class="subtitle">Saisissez votre code personnel pour demander l’ouverture du portail.</p>
 
       <div class="actions">
@@ -479,13 +495,13 @@ async function reconnectAutomatically() {
   }
 
   if (typeof navigator.bluetooth.getDevices !== "function") {
-    setStatus("Connectez le portail en appuyant sur « Ouvrir le portail ».");
-    return;
+    setStatus("Entrer votre code, appuyer sur «Ouvrir le portail» puis autoriser la connexion Bluetooth au portail. Le code sera mémorisé pour la prochaine connexion.");
+    return; 
   }
 
   const devices = await navigator.bluetooth.getDevices();
   const knownDevice = devices.find((knownDevice) =>
-    knownDevice.name === 'Portail Vital'
+    knownDevice.name === 'Portail Vital2'
   );
 
   if (!knownDevice) {

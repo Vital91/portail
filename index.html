@@ -308,7 +308,7 @@
     <header class="topline">
       <h1 id="page-title">Télécommande <br>Portail</h1>
       <div class="remote-meta">
-        <img class="remote-image" src="Telecommande.jpg" alt="Illustration de la télécommande du portail">
+        <img class="remote-image" src="Telecommande.jpg">
         <span class="device-tag">ESP32 · BLE</span>
       </div>
     </header>
@@ -347,10 +347,13 @@
 
 <script>
 let characteristicTX;
+let configurationCharacteristic;
 let device;
 
 const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const CHARACTERISTIC_TX_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+const CONFIG_SERVICE_UUID = '8d3f0001-9b2c-4e6a-9b7a-1e9e00000001';
+const CONFIG_CHARACTERISTIC_UUID = '8d3f0002-9b2c-4e6a-9b7a-1e9e00000001';
 const statusElement = document.getElementById("status");
 const statusPanel = document.getElementById("status-panel");
 const commandValue = document.getElementById("command-value");
@@ -441,7 +444,7 @@ function setStatus(message) {
   statusPanel.dataset.state = normalizedMessage.includes("connecté") ||
     normalizedMessage.includes("ouverture autorisée")
     ? "connected"
-    : ["échec", "incorrect", "pas valide", "non synchronisée", "saisissez"].some(part =>
+    : ["échec", "incorrect", "pas valide", "non synchronisée", "saisissez", "occupé"].some(part =>
         normalizedMessage.includes(part))
       ? "error"
       : "waiting";
@@ -453,7 +456,8 @@ function handleResponse(value) {
     opening: "Code accepté. Ouverture autorisée.",
     invalid_pin: "Code incorrect ou utilisateur inconnu.",
     pin_expired: "Ce code n’est pas valide à la date actuelle.",
-    time_not_synced: "Heure du portail non synchronisée. Contactez l’administrateur."
+    time_not_synced: "Heure du portail non synchronisée. Contactez l’administrateur.",
+    busy: "File d’ouvertures pleine. Réessayez dans quelques secondes."
   };
   const message = messages[response];
   if (message) {
@@ -467,6 +471,7 @@ async function connectToDevice(selectedDevice) {
   setStatus(`Connexion à ${device.name || 'l’ESP32'}...`);
   device.addEventListener('gattserverdisconnected', () => {
     characteristicTX = undefined;
+    configurationCharacteristic = undefined;
     setStatus("ESP32 déconnecté");
   });
 
@@ -475,6 +480,8 @@ async function connectToDevice(selectedDevice) {
     : await device.gatt.connect();
   const service = await server.getPrimaryService(SERVICE_UUID);
   characteristicTX = await service.getCharacteristic(CHARACTERISTIC_TX_UUID);
+  const configurationService = await server.getPrimaryService(CONFIG_SERVICE_UUID);
+  configurationCharacteristic = await configurationService.getCharacteristic(CONFIG_CHARACTERISTIC_UUID);
   characteristicTX.addEventListener("characteristicvaluechanged", event => {
     handleResponse(event.target.value);
   });
@@ -539,10 +546,15 @@ document.getElementById("send").onclick = async () => {
 
     if (!characteristicTX) {
       const selectedDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }]
+        filters: [{ services: [SERVICE_UUID] }],
+        optionalServices: [CONFIG_SERVICE_UUID]
       });
       await connectToDevice(selectedDevice);
     }
+    await configurationCharacteristic.writeValueWithResponse(new TextEncoder().encode(JSON.stringify({
+      action: "syncTime",
+      timestamp: Math.floor(Date.now() / 1000)
+    })));
     commandValue.textContent = "En attente";
     setStatus("Code envoyé. Vérification en cours…");
     await characteristicTX.writeValueWithResponse(new TextEncoder().encode(pin));
